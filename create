@@ -1,0 +1,55 @@
+#!/usr/bin/env zsh
+GH_API="YOUR_GITHUB_API_KEY"
+GH_USERNAME="YOUR_GITHUB_USERNAME"
+
+GL_API="YOUR_GITLAB_API_KEY"
+GL_USERNAME="YOUR_GITLAB_USERNAME"
+
+clear
+echo "=================="
+echo GIT INITIALIZATION
+echo "=================="
+
+folderName=$1
+
+# Create directory and initialize Git
+echo "Enter project description:"
+read projectDesc
+echo -ne '                     [0%]\r'
+mkdir $folderName
+cd $folderName
+git init > /dev/null 2>&1
+echo "# $folderName\n$projectDesc\n---" >README.md
+echo "test*\nprivate*" >.gitignore
+echo -ne '>                    [5%]\r'
+# Create GitHub repository
+curl --header "Authorization: token ${GH_API}" \
+--header "Accept: application/vnd.github.v3+json" \
+--data '{"name": "'"${folderName}"'", "description": "'"${projectDesc}"'"}' https://api.github.com/user/repos > /dev/null 2>&1
+echo -ne '>>>                 [25%]\r'
+# Linking remote to local
+git remote add origin https://github.com/${GH_USERNAME}/${folderName} > /dev/null 2>&1
+git remote set-url --add --push origin https://github.com/${GH_USERNAME}/${folderName} > /dev/null 2>&1
+echo -ne '>>>>>               [40%]\r'
+
+### Comment next lines for initializing only to GitHub. ###
+# Create GitLab repository
+curl --header "PRIVATE-TOKEN: $GL_API" \
+--header "Content-Type: application/json" \
+--data '{"name": "'"${folderName}"'", "description": "'"${projectDesc}"'", "visibility": "public"}' https://gitlab.com/api/v4/projects > /dev/null 2>&1
+echo -ne '>>>>>>>>>>>>        [60%]\r'
+git remote set-url --add --push origin https://gitlab.com/${GL_USERNAME}/${folderName} > /dev/null 2>&1
+echo -ne '>>>>>>>>>>>>>>>     [75%]\r'
+# End GitLab repository
+
+echo -ne '>>>>>>>>>>>>>>>>>   [85%]\r'
+git add .  > /dev/null 2>&1
+echo -ne '>>>>>>>>>>>>>>>>>>  [90%]\r'
+git commit -m "Ajout des fichiers initiaux." > /dev/null 2>&1
+echo -ne '>>>>>>>>>>>>>>>>>>> [95%]\r'
+git push -u origin master > /dev/null 2>&1
+echo -ne '>>>>>>>>>>>>>>>>>>>[100%]\r'
+echo -ne '\n'
+echo "================"
+echo End of Script...
+echo "================"
